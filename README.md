@@ -77,4 +77,4 @@ Tag: `20261102bak` (zeigt auf Commit `3cddbd1`).
 
 ## 📱 PWA
 
-Über `manifest.webmanifest` + `sw.js` ist das Spiel installierbar („Zum Homescreen hinzufügen“). Der Service Worker cached nur lokale Dateien; ohne Internet läuft das Spiel offline, die Online-Highscores fallen dann auf die lokale Liste zurück.
+Über `manifest.webmanifest` + `sw.js` ist das Spiel installierbar („Zum Homescreen hinzufügen“). Der Service Worker lädt **Code (HTML/JS/Manifest) network-first** – nach jedem Deploy siehst du sofort die neue Version, der HTTP-Cache wird umgangen (`cache: 'no-cache'`). Nur statische Assets (z. B. das Favicon) kommen cache-first aus dem Cache. Ohne Internet läuft das Spiel offline (Fallback auf den Cache), die Online-Highscores fallen dann auf die lokale Liste zurück. Die Cache-Version (`ufo-jagd-v2`) wird bei jedem Release in `sw.js` hochgezählt.
