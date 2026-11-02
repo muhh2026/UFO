@@ -108,12 +108,10 @@ window.renderOnlineScores = function () {
     q.appendChild(e);
     return;
   }
-  window.onlineHighscores.forEach(function (v, i) {
+  // <ol> nummeriert automatisch – keine manuelle Platznummer voranstellen
+  window.onlineHighscores.forEach(function (v) {
     var e = document.createElement("li");
     e.textContent =
-      i +
-      1 +
-      ". " +
       String(v.name || "Spieler") +
       " - " +
       Number(v.score || 0).toLocaleString("de-DE") +

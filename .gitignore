@@ -1,5 +1,9 @@
 # Backups (liegen als Bundle im Repo, aber nicht in Git)
 *.bundle
 
+# Alte Entwicklungs-Snapshots: lokal behalten, aber nicht in Git
+# (sind in der Git-History und im 20261102bak.bundle gesichert)
+archive/
+
 node_modules/
 .DS_Store

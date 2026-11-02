@@ -43,8 +43,9 @@ js/firebase-highscore.js    Online-Highscores via Firebase Realtime DB (anonyme 
 manifest.webmanifest        PWA-Manifest (installierbar als App)
 sw.js                       Service Worker (offline Cache für lokale Dateien)
 database.rules.json         empfohlene Firebase-Realtime-DB-Security-Rules
-archive/                    alte Entwicklungs-Snapshots (nur Referenz)
-20261102bak.bundle          komplettes Backup des Repo-Zustands vom 02.11.2026
+archive/                    alte Entwicklungs-Snapshots (nur lokal, nicht in Git –
+                            gesichert in der Git-History und im Bundle, siehe unten)
+20261102bak.bundle          komplettes Backup des Repo-Zustands vom 02.11.2026 (untracked)
 ```
 
 ## 🏆 Highscores
