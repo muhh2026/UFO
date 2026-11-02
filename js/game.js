@@ -1946,9 +1946,15 @@
   }
   document.getElementById("mute").onclick = toggleMute;
   muteUi();
+  // PAUSE-Button: nur schlicht pausieren – der "Windows-Update"-Screen
+  // erscheint ausschließlich über die Tasten A/P (toggleSheet).
+  // Ist der Screen gerade offen, wird er beim Button-Klick mit geschlossen.
   document.getElementById("pause").onclick = function () {
     if (!run) return;
-    toggleSheet();
+    paused = !paused;
+    last = performance.now();
+    if (!paused) document.getElementById("sheet").className = "";
+    this.textContent = paused ? "WEITER" : "PAUSE";
   };
   document.getElementById("quit").onclick = function () {
     if (!run) return;
