@@ -46,6 +46,9 @@ js/firebase-highscore.js    Online-Highscores via Firebase Realtime DB (anonyme 
 manifest.webmanifest        PWA-Manifest (installierbar als App)
 sw.js                       Service Worker (offline Cache für lokale Dateien)
 database.rules.json         empfohlene Firebase-Realtime-DB-Security-Rules
+deep/                       Zweites Spiel „DEEP“: Taucher schwimmt ständig im Wasser und
+                            umschwimmt Korallen, Felsen, Quallen und Haie (index.html + game.js,
+                            erreichbar unter /deep/)
 archive/                    alte Entwicklungs-Snapshots (nur lokal, nicht in Git –
                             gesichert in der Git-History und im Bundle, siehe unten)
 20261102bak.bundle          komplettes Backup des Repo-Zustands vom 02.11.2026 (untracked)
