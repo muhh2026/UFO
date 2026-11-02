@@ -226,9 +226,6 @@
       }
     }
 
-    // Schwimmbewegung: sanftes Auf und Ab der Strömung, wenn nichts gesteuert wird
-    dvy += Math.sin(t * 2.1) * 14;
-
     // Wasserwiderstand: die Geschwindigkeit nähert sich dem Ziel weich an
     const k = Math.min(1, dt * 5);
     diver.vx += (dvx - diver.vx) * k;
@@ -240,7 +237,9 @@
     diver.x = clamp(diver.x, 60, W - 60);
     diver.y = clamp(diver.y, TOP + diver.r, FLOOR - diver.r);
 
-    diver.anim += dt * (4 + Math.abs(diver.vx) / 80);
+    // Schwimmanimation nur, wenn sich der Taucher wirklich bewegt
+    const speed = Math.hypot(diver.vx, diver.vy);
+    if (speed > 8) diver.anim += dt * (3 + speed / 70);
 
     // Atemblasen
     if (t - lastBubbleAt > 0.35) {
@@ -487,8 +486,9 @@
   // ---------- Zeichnen: Taucher ----------
   function drawDiver() {
     const tilt = clamp(diver.vy / 600, -0.45, 0.45);
-    const kick = Math.sin(diver.anim * 2) * 0.35;
-    const arm = -0.7 + Math.sin(diver.anim) * 1.0;
+    const moving = Math.hypot(diver.vx, diver.vy) > 8;
+    const kick = moving ? Math.sin(diver.anim * 2) * 0.35 : 0;
+    const arm = moving ? -0.7 + Math.sin(diver.anim) * 1.0 : -0.3;
 
     ctx.save();
     ctx.translate(diver.x, diver.y);
