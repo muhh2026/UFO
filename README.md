@@ -13,7 +13,9 @@ Ein deutschsprachiges Browser-Shooter-Spiel auf Canvas 2D: Du verteidigst **10 K
 | **Jet treffen** | −150 Punkte; bei **5 Jets** → Mission verloren |
 | Alle 10 Kühe gestohlen | Mission verloren |
 | **Mond anklicken** (oben rechts) | 5 s Zeitlupe, danach 10 s Cooldown |
-| **A / P** oder **PAUSE-Button** | Pause (zeigt den „Windows-Update“-Screen 😄) |
+| **PAUSE-Button** | Schlichtes Pausieren (ohne Screen) |
+| **A / P** | Pause mit „Windows-Update“-Screen 😄 |
+| **M** oder **🔊-Button** | Sound an/aus (wird in `localStorage` gespeichert) |
 | **BEENDEN** | Zurück zum Menü |
 
 **Easter Eggs:** E.T. auf dem Fahrrad und ein Tier am Boden dürfen **nicht** angeklickt werden … 👽🚲
