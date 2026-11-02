@@ -37,7 +37,8 @@
     level = 1,
     hits = 0,
     spawn = 0,
-    last = 0;
+    last = 0,
+    muted = false;
   function resize() {
     W = innerWidth;
     H = innerHeight;
@@ -72,6 +73,11 @@
   } catch (e) {
     high = [];
   }
+  try {
+    muted = localStorage.getItem("ufoMute") === "1";
+  } catch (e) {
+    muted = false;
+  }
   function cheer() {
     LU.className = "";
     void LU.offsetWidth;
@@ -96,6 +102,7 @@
     SB.style.display = "inline";
   }
   function sound(kind) {
+    if (muted) return;
     try {
       if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
       if (ac.state === "suspended") ac.resume();
@@ -1695,7 +1702,7 @@
       renderLocalScores();
       return;
     }
-    q.innerHTML = "<li>Online-Highscores werden geladen...</li>";
+    q.textContent = "Online-Highscores werden geladen...";
     if (window.renderOnlineScores) window.renderOnlineScores();
     // Fallback: wenn Firebase nicht rechtzeitig online geht, lokale Liste anzeigen
     setTimeout(function () {
@@ -1908,21 +1915,37 @@
     } else hideSheet();
   }
   function handleKey(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     var k = (e.key || "").toLowerCase();
-    if (
-      (k === "a" || k === "p" || e.code === "KeyA" || e.code === "KeyP") &&
-      !e.ctrlKey &&
-      !e.metaKey &&
-      !e.altKey
-    ) {
-      var a = document.activeElement;
-      if (a && /^(input|textarea|select)$/i.test(a.tagName)) return;
+    var a = document.activeElement;
+    if (a && /^(input|textarea|select)$/i.test(a.tagName)) return;
+    if (k === "m" || e.code === "KeyM") {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleMute();
+      return;
+    }
+    if (k === "a" || k === "p" || e.code === "KeyA" || e.code === "KeyP") {
       e.preventDefault();
       e.stopPropagation();
       toggleSheet();
     }
   }
   document.addEventListener("keydown", handleKey, true);
+  function muteUi() {
+    var mb = document.getElementById("mute");
+    if (mb) mb.textContent = muted ? "🔇" : "🔊";
+  }
+  function toggleMute() {
+    muted = !muted;
+    try {
+      localStorage.setItem("ufoMute", muted ? "1" : "0");
+    } catch (e) {}
+    muteUi();
+    if (!muted) sound("hit");
+  }
+  document.getElementById("mute").onclick = toggleMute;
+  muteUi();
   document.getElementById("pause").onclick = function () {
     if (!run) return;
     toggleSheet();
