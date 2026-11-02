@@ -215,6 +215,144 @@
           margin: 10px auto 8px;
         }
       }
+      /* Intro-Splashscreen */
+      #intro {
+        position: fixed;
+        inset: 0;
+        z-index: 9999999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        overflow: hidden;
+        cursor: pointer;
+        background:
+          radial-gradient(ellipse at 50% 120%, #123a2a 0%, transparent 55%),
+          linear-gradient(
+            180deg,
+            #01030f 0%,
+            #07152e 45%,
+            #102c55 70%,
+            #050b18 100%
+          );
+        transition: opacity 0.6s ease;
+      }
+      #intro.hide {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .intro-stars {
+        position: absolute;
+        inset: -100px;
+        background-image:
+          radial-gradient(1.5px 1.5px at 25px 35px, #fff 60%, transparent),
+          radial-gradient(1px 1px at 120px 90px, #cfefff 60%, transparent),
+          radial-gradient(1.2px 1.2px at 200px 40px, #fff 60%, transparent),
+          radial-gradient(1px 1px at 70px 160px, #ffe9b0 60%, transparent),
+          radial-gradient(1.6px 1.6px at 260px 140px, #fff 60%, transparent);
+        background-size: 300px 220px;
+        animation: introTwinkle 2.6s ease-in-out infinite alternate;
+        opacity: 0.9;
+        pointer-events: none;
+      }
+      .intro-stars.s2 {
+        background-size: 420px 300px;
+        animation-duration: 3.7s;
+        opacity: 0.55;
+      }
+      @keyframes introTwinkle {
+        from {
+          transform: translateY(0);
+          opacity: 0.55;
+        }
+        to {
+          transform: translateY(-14px);
+          opacity: 1;
+        }
+      }
+      .intro-ufo-wrap {
+        position: absolute;
+        top: 16%;
+        left: 0;
+        animation: introFly 5.2s linear forwards;
+        pointer-events: none;
+      }
+      @keyframes introFly {
+        from {
+          transform: translateX(-30vw) translateY(0);
+        }
+        50% {
+          transform: translateX(45vw) translateY(12px);
+        }
+        to {
+          transform: translateX(115vw) translateY(-6px);
+        }
+      }
+      .intro-ufo {
+        width: clamp(90px, 18vw, 150px);
+        filter: drop-shadow(0 0 18px #59e6ff88);
+      }
+      .intro-beam {
+        width: 0;
+        height: 0;
+        margin: -4px auto 0;
+        border-left: 26px solid transparent;
+        border-right: 26px solid transparent;
+        border-top: 90px solid rgba(120, 240, 255, 0.16);
+        filter: blur(2px);
+      }
+      .intro-title {
+        position: relative;
+        margin-top: 16vh;
+        font-size: clamp(44px, 11vw, 92px);
+        font-weight: 900;
+        letter-spacing: 4px;
+        background: linear-gradient(180deg, #efffff, #69e8ff 62%, #35aee1);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: introTitle 1.1s ease-out both;
+      }
+      .intro-title span {
+        color: #ff2b2b;
+        -webkit-text-fill-color: #ff2b2b;
+        text-shadow: 0 0 24px #ff0000;
+      }
+      .intro-sub {
+        font-size: clamp(14px, 3.4vw, 24px);
+        letter-spacing: 10px;
+        color: #93f9ff;
+        text-shadow: 0 0 14px #3ed8f1;
+        animation: introTitle 1.4s ease-out both;
+      }
+      .intro-hint {
+        margin-top: 26px;
+        font-size: clamp(13px, 3vw, 17px);
+        color: #d3eafa;
+        animation: introPulse 1.2s ease-in-out infinite;
+      }
+      @keyframes introTitle {
+        from {
+          opacity: 0;
+          transform: scale(0.7);
+          filter: blur(6px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+          filter: blur(0);
+        }
+      }
+      @keyframes introPulse {
+        0%,
+        100% {
+          opacity: 0.45;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
       .name {
         display: block;
         width: min(260px, 100%);
@@ -479,6 +617,31 @@
       ><button id="mute" class="pause" title="Sound an/aus (Taste M)">🔊</button>
     </div>
     <div id="levelUp">LEVEL GESCHAFFT!</div>
+    <div id="intro" role="button" tabindex="0" aria-label="Intro überspringen">
+      <div class="intro-stars"></div>
+      <div class="intro-stars s2"></div>
+      <div class="intro-ufo-wrap">
+        <svg class="intro-ufo" viewBox="0 0 120 60" aria-hidden="true">
+          <defs>
+            <linearGradient id="ufoBody" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#d9f6ff" />
+              <stop offset=".45" stop-color="#7fa8bd" />
+              <stop offset="1" stop-color="#1c2f3d" />
+            </linearGradient>
+          </defs>
+          <ellipse cx="60" cy="34" rx="52" ry="14" fill="url(#ufoBody)" />
+          <path d="M38 28 Q60 4 82 28 Z" fill="#bff3ff" opacity=".85" />
+          <circle cx="30" cy="36" r="4" fill="#ffd166" />
+          <circle cx="52" cy="39" r="4" fill="#7bff9e" />
+          <circle cx="74" cy="39" r="4" fill="#ff7b7b" />
+          <circle cx="94" cy="35" r="3.4" fill="#ffd166" />
+        </svg>
+        <div class="intro-beam"></div>
+      </div>
+      <div class="intro-title"><span>UFO</span>-JAGD</div>
+      <div class="intro-sub">NACHTANGRIFF</div>
+      <div class="intro-hint">▶ Klick oder Taste = ins Menü</div>
+    </div>
     <div id="sheet">
       <div class="sheetBox">
         <div
@@ -524,6 +687,7 @@
         </div>
       </div>
     </div>
+    <script src="js/intro.js"></script>
     <script src="js/game.js"></script>
     <div
       id="reddot"

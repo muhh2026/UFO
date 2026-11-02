@@ -38,6 +38,7 @@ python3 -m http.server 8000
 
 ```
 index.html                  Spiel-Seite (HTML + CSS), bindet die Skripte ein
+js/intro.js                 Intro-Splashscreen (UFO-Flug + Titel; Klick/Taste/6 s)
 js/game.js                  komplette Spiellogik (Canvas, Loop, HUD, Klicks)
 js/crosshair.js             Custom-Fadenkreuz + Service-Worker-Registrierung
 js/cinematic-blast.js       Explosions-Overlay (Flash, Feuerball, Schockwelle, Partikel)
