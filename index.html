@@ -174,6 +174,8 @@
       .scores {
         margin: 16px auto 0;
         max-width: 260px;
+        max-height: 9.5em; /* kompakt: Liste scrollt intern statt die ganze Karte wachsen zu lassen */
+        overflow: auto;
         padding: 10px 16px;
         text-align: left;
         border: 1px solid #76dcf044;
@@ -187,7 +189,31 @@
         font-weight: 700;
       }
       .scores li {
-        padding: 2px 0;
+        padding: 1px 0;
+      }
+      /* Kompaktes Startmenü auf kurzen/schmalen Screens (Handy), besonders mit Highscore-Liste */
+      @media (max-height: 780px) and (max-width: 700px) {
+        .card {
+          padding: 18px 16px;
+        }
+        .card h1 {
+          font-size: clamp(26px, 9vw, 36px);
+        }
+        .intro {
+          margin: 10px auto;
+          padding: 10px 12px;
+          font-size: 13px;
+          line-height: 1.4;
+        }
+        .scores {
+          max-height: 8em;
+          margin-top: 10px;
+          padding: 8px 12px;
+          font-size: 13px;
+        }
+        .name {
+          margin: 10px auto 8px;
+        }
       }
       .name {
         display: block;
