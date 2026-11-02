@@ -1,0 +1,20 @@
+{
+  "name": "UFO-Jagd: Nachtangriff",
+  "short_name": "UFO-Jagd",
+  "description": "Verteidige 10 Kühe gegen UFOs – Browser-Shooter bei Nacht.",
+  "lang": "de",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#01030c",
+  "theme_color": "#061731",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

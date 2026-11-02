@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "highscores": {
+      ".read": true,
+      "$entry": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['name', 'score', 'timestamp']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 18 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 10000000"
+      }
+    }
+  }
+}
