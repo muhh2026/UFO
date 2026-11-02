@@ -1,0 +1,5 @@
+# Backups (liegen als Bundle im Repo, aber nicht in Git)
+*.bundle
+
+node_modules/
+.DS_Store
