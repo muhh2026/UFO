@@ -8,10 +8,11 @@
 // - CACHE-Version wird bei jedem Release hochgezählt; beim Activate werden
 //   alle älteren Caches gelöscht, skipWaiting + clients.claim sorgen dafür,
 //   dass das Update sofort aktiv wird.
-var CACHE = "ufo-jagd-v2";
+var CACHE = "ufo-jagd-v3";
 var ASSETS = [
   "./",
   "./index.html",
+  "./js/intro.js",
   "./js/game.js",
   "./js/crosshair.js",
   "./js/cinematic-blast.js",
