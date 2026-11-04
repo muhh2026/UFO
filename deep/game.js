@@ -50,6 +50,7 @@
   // 'ready' = Startbildschirm, 'play', 'paused', 'over'
   let state = 'ready';
   let t = 0;              // Spielzeit (s)
+  let animT = 0;          // Wasser-Animationszeit: läuft nur, solange der Taucher gesteuert wird
   let traveled = 0;       // zurückgelegte Strecke (px)
   let passed = 0;         // umschwommene Hindernisse
   let nextSpawn = 0;      // Strecke, ab der das nächste Hindernis kommt
@@ -543,7 +544,7 @@
     // Lichtstrahlen von der Oberfläche
     ctx.save();
     for (let i = 0; i < 6; i++) {
-      const bx = ((i * 220 - traveled * 0.05 + t * 8) % (W + 300) + W + 300) % (W + 300) - 150;
+      const bx = ((i * 220 - traveled * 0.05 + animT * 8) % (W + 300) + W + 300) % (W + 300) - 150;
       const grad = ctx.createLinearGradient(bx, 0, bx + 120, H * 0.8);
       grad.addColorStop(0, 'rgba(180,245,255,0.16)');
       grad.addColorStop(1, 'rgba(180,245,255,0)');
@@ -1040,6 +1041,8 @@
       }
 
       updateDiver(dt);
+      // Wasser/Hintergrund bewegt sich nur, solange der Taucher aktiv gesteuert wird
+      if (Math.hypot(diver.vx, diver.vy) > 8) animT += dt;
       updateObstacles(dt, scroll);
       updateItems(dt, scroll);
       checkPassed();
