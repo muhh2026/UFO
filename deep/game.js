@@ -1,7 +1,5 @@
-/* DEEP – der Taucher ist ständig im Wasser.
- * Er schwimmt dauerhaft nach rechts (Strömung/Vortrieb), der Spieler steuert
- * ihn in alle Richtungen und muss Riffe, Felsen, Quallen und Haie umschwimmen.
- * Steuerung: Pfeiltasten / WASD, Maus oder Finger (zieht den Taucher zum Zeiger).
+/* DEEP – der Taucher bewegt sich nur bei gedrückter Richtungstaste.
+ * Steuerung: Pfeiltasten / WASD.
  */
 (() => {
   'use strict';
@@ -84,8 +82,6 @@
   const diver = { x: 180, y: 300, vx: 0, vy: 0, r: 16, anim: 0 };
 
   const keys = {};
-  let pointer = null;     // Zeiger in Weltkoordinaten
-  let pointerActive = false;
 
   function buildBackground() {
     specks = Array.from({ length: 60 }, () => ({
@@ -280,21 +276,11 @@
       const len = Math.hypot(kx, ky);
       dvx = (kx / len) * maxSpeed;
       dvy = (ky / len) * maxSpeed;
-    } else if (pointerActive && pointer) {
-      const ex = pointer.x - diver.x;
-      const ey = pointer.y - diver.y;
-      const dist = Math.hypot(ex, ey);
-      if (dist > 4) {
-        const sp = Math.min(maxSpeed, dist * 3.5);
-        dvx = (ex / dist) * sp;
-        dvy = (ey / dist) * sp;
-      }
     }
 
-    // Wasserwiderstand: die Geschwindigkeit nähert sich dem Ziel weich an
-    const k = Math.min(1, dt * 5);
-    diver.vx += (dvx - diver.vx) * k;
-    diver.vy += (dvy - diver.vy) * k;
+    // Ohne gedrückte Richtungstaste sofort stillstehen, ohne Nachgleiten.
+    diver.vx = dvx;
+    diver.vy = dvy;
     diver.x += diver.vx * dt;
     diver.y += diver.vy * dt;
 
@@ -916,6 +902,8 @@
     ctx.save();
     ctx.translate(diver.x, diver.y);
     ctx.rotate(tilt);
+    // Die gesamte Silhouette inklusive Tank und Maske deutlich schlanker zeichnen.
+    ctx.scale(1, 0.68);
 
     // Schmale, schwarze Flosse
     ctx.save();
@@ -1135,32 +1123,11 @@
 
   window.addEventListener('blur', () => {
     for (const k of Object.keys(keys)) keys[k] = false;
-    pointerActive = false;
   });
 
-  function toWorld(e) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: ((e.clientX - rect.left) / rect.width) * W,
-      y: ((e.clientY - rect.top) / rect.height) * H,
-    };
-  }
-
-  window.addEventListener('pointermove', (e) => {
-    if (e.pointerType !== 'mouse' && e.buttons === 0) return;
-    pointer = toWorld(e);
-    pointerActive = true;
-  });
-
-  window.addEventListener('pointerdown', (e) => {
-    pointer = toWorld(e);
-    pointerActive = true;
+  // Ein Klick startet das Spiel, steuert aber nicht den Taucher.
+  window.addEventListener('pointerdown', () => {
     action();
-  });
-
-  window.addEventListener('pointerup', (e) => {
-    // Bei Touch den Zeiger loslassen, damit der Taucher sich wieder selbst bewegt
-    if (e.pointerType !== 'mouse') pointerActive = false;
   });
 
   // Leertaste/Enter/Klick: starten, neu starten oder Pause beenden
@@ -1175,13 +1142,13 @@
   diver.y = 300;
   showOverlay(
     'DEEP',
-    `Der Taucher ist immer im Wasser und schwimmt von selbst weiter.<br>
+    `Der Taucher schwimmt nur, solange du eine Richtungstaste gedrückt hältst.<br>
      Weiche <b>Korallen</b>, <b>Felsen</b>, <b>Quallen</b> und <b>Haien</b> aus und schwimm um sie herum.<br><br>
      Achte auf deine <b>Luft (O₂)</b> – sie läuft ständig ab, <b>Luftflaschen</b> füllen sie wieder auf.
      Sammle <b>Perlen</b> für Punkte, und sichere dir
      <b style="color:#ffd465">Schild</b> 🛡, <b style="color:#ff8a3d">Turbo</b> ⚡ und
      <b style="color:#c79bff">Magnet</b> 🧲 für den Vorteil.<br><br>
-     <kbd>Pfeiltasten</kbd>/<kbd>WASD</kbd> oder Maus/Finger = steuern · <kbd>P</kbd> = Pause<br><br>
+     <kbd>Pfeiltasten</kbd>/<kbd>WASD</kbd> = schwimmen · <kbd>P</kbd> = Pause<br><br>
      <kbd>Leertaste</kbd> oder Klick = Start`
   );
   requestAnimationFrame(frame);
