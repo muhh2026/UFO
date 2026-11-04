@@ -32,7 +32,7 @@
       width: 100%;
       height: 100%;
       border-radius: 10px;
-      box-shadow: 0 0 40px rgba(0, 140, 200, 0.25);
+      box-shadow: 0 0 40px rgba(0, 140, 200, 0.25), 0 18px 70px rgba(0, 0, 0, 0.45);
     }
     #hud {
       position: absolute;
@@ -126,6 +126,14 @@
       line-height: 1.55;
       max-width: 620px;
       text-shadow: 0 1px 3px #000;
+      padding: 18px 24px;
+      border: 1px solid rgba(135, 224, 255, 0.35);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(4, 34, 55, 0.78), rgba(1, 12, 25, 0.82));
+      box-shadow: 0 12px 38px rgba(0, 0, 0, 0.28), inset 0 1px rgba(225, 250, 255, 0.08);
+      backdrop-filter: blur(8px);
+      max-height: 76vh;
+      overflow-y: auto;
     }
     #ovMsg kbd {
       background: #0c2a40;
@@ -133,6 +141,12 @@
       border-radius: 4px;
       padding: 1px 6px;
       font-family: inherit;
+    }
+    @media (max-width: 600px) {
+      #hud { gap: 7px 11px; top: 7px; left: 9px; right: 9px; font-size: 11px; }
+      #o2box { min-width: 118px; }
+      #o2bar { width: 76px; }
+      #ovMsg { padding: 14px 16px; font-size: 13px; }
     }
   </style>
 </head>
@@ -158,6 +172,6 @@
       <div id="ovMsg"></div>
     </div>
   </div>
-  <script src="game.js"></script>
+  <script src="game.js?v=20261104-slim-black-diver"></script>
 </body>
 </html>
