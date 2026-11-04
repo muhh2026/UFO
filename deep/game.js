@@ -59,6 +59,7 @@
   let bubbles = [];
   let specks = [];        // Plankton im Hintergrund
   let weeds = [];         // Seegras (Parallax)
+  let fish = [];          // kleine Fischschwärme im Hintergrund
   let lastBubbleAt = 0;
   let lastDistShown = -1;
   let lastPassedShown = -1;
@@ -80,7 +81,7 @@
   let invulnT = 0;        // kurze Unverwundbarkeit nach Rettung
   let effectsHtml = '';   // aktuelle Anzeige der aktiven Power-Ups
 
-  const diver = { x: 180, y: 300, vx: 0, vy: 0, r: 20, anim: 0 };
+  const diver = { x: 180, y: 300, vx: 0, vy: 0, r: 16, anim: 0 };
 
   const keys = {};
   let pointer = null;     // Zeiger in Weltkoordinaten
@@ -91,6 +92,22 @@
       x: rand(0, W), y: rand(TOP, FLOOR), s: rand(0.6, 2.2), f: rand(0.3, 1),
     }));
     weeds = [];
+    fish = [];
+    // Drei lockere Schwärme geben der Tiefe Leben, ohne Hindernisse zu verdecken.
+    for (let school = 0; school < 3; school++) {
+      const baseX = rand(100, 1500);
+      const baseY = rand(TOP + 90, FLOOR - 110);
+      const scale = rand(0.55, 0.95);
+      for (let i = 0; i < 6; i++) {
+        fish.push({
+          x: baseX + (i % 3) * rand(24, 42),
+          y: baseY + Math.floor(i / 3) * rand(15, 26) + rand(-5, 5),
+          scale: scale * rand(0.8, 1.15),
+          phase: rand(0, Math.PI * 2),
+          speed: rand(0.12, 0.28),
+        });
+      }
+    }
     for (let i = 0; i < 46; i++) {
       const far = i % 2 === 0;
       weeds.push({
@@ -567,6 +584,69 @@
     ctx.globalAlpha = 1;
   }
 
+  function drawSurface() {
+    // Bewegte, feine Wellenkante und Lichtreflexe direkt unter der Oberfläche.
+    const shimmer = 0.45 + Math.sin(t * 1.7) * 0.08;
+    ctx.save();
+    ctx.strokeStyle = `rgba(190, 250, 255, ${shimmer})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, TOP + 8);
+    for (let x = 0; x <= W; x += 24) {
+      ctx.lineTo(x, TOP + 8 + Math.sin(x * 0.025 + t * 2.2) * 3);
+    }
+    ctx.stroke();
+    for (let i = 0; i < 9; i++) {
+      const x = ((i * 137 - traveled * 0.24 + t * 18) % (W + 100) + W + 100) % (W + 100) - 50;
+      const y = TOP + 18 + (i % 3) * 11;
+      ctx.globalAlpha = 0.18 + 0.12 * Math.sin(t * 2 + i);
+      ctx.strokeStyle = '#d3fbff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 17 + (i % 4) * 5, 2, -0.08, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawFish() {
+    // Fische ziehen langsam an der Kamera vorbei und schwimmen leicht im Takt.
+    ctx.save();
+    for (const f of fish) {
+      const period = W + 180;
+      const sx = ((f.x - traveled * f.speed + t * 12) % period + period) % period - 70;
+      const sy = f.y + Math.sin(t * 1.5 + f.phase) * 5;
+      const s = f.scale;
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.scale(s, s);
+      ctx.globalAlpha = 0.19;
+      ctx.fillStyle = '#b9e9e8';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 13, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      const tail = Math.sin(t * 8 + f.phase) * 2;
+      ctx.beginPath();
+      ctx.moveTo(-11, 0);
+      ctx.lineTo(-19, -6 + tail);
+      ctx.lineTo(-19, 6 + tail);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-1, -4);
+      ctx.lineTo(3, -9);
+      ctx.lineTo(6, -4);
+      ctx.fill();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = '#eaffff';
+      ctx.beginPath();
+      ctx.arc(7, -1, 1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
   function drawWeeds(far) {
     const period = 1400;
     const speed = far ? 0.35 : 0.8;
@@ -837,53 +917,101 @@
     ctx.translate(diver.x, diver.y);
     ctx.rotate(tilt);
 
-    // Flosse
+    // Schmale, schwarze Flosse
     ctx.save();
-    ctx.translate(-20, 0);
+    ctx.translate(-19, 1);
     ctx.rotate(kick);
-    ctx.fillStyle = '#e8562a';
+    ctx.fillStyle = '#090d11';
     ctx.beginPath();
-    ctx.ellipse(-9, 0, 13, 6, 0, 0, Math.PI * 2);
+    ctx.moveTo(-7, -4);
+    ctx.quadraticCurveTo(-20, -6, -29, -2);
+    ctx.lineTo(-34, 0);
+    ctx.lineTo(-28, 4);
+    ctx.quadraticCurveTo(-17, 7, -7, 4);
+    ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = '#39464d';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
     ctx.restore();
 
-    // Sauerstofftank auf dem Rücken
-    ctx.fillStyle = '#9aa8b5';
+    // Kompakter Sauerstofftank mit dunklem Metall-Finish
+    const tank = ctx.createLinearGradient(-19, 0, 4, 0);
+    tank.addColorStop(0, '#202a30');
+    tank.addColorStop(0.45, '#59656a');
+    tank.addColorStop(1, '#20292e');
+    ctx.fillStyle = tank;
     ctx.beginPath();
-    ctx.roundRect(-18, -15, 22, 30, 7);
+    ctx.roundRect(-17, -12, 18, 24, 6);
     ctx.fill();
-    ctx.fillStyle = '#5f6e7d';
-    ctx.fillRect(-18, -4, 22, 3);
+    ctx.strokeStyle = '#849195';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#11191e';
+    ctx.fillRect(-16, -3, 16, 3);
+    ctx.fillStyle = '#75d9df';
+    ctx.fillRect(-1, -11, 3, 4);
 
-    // Körper (Taucheranzug)
-    ctx.fillStyle = '#ffc21a';
+    // Schlanker schwarzer Neoprenanzug
+    const suit = ctx.createLinearGradient(0, -10, 0, 10);
+    suit.addColorStop(0, '#303a40');
+    suit.addColorStop(0.34, '#171e23');
+    suit.addColorStop(1, '#080c10');
+    ctx.fillStyle = suit;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 20, 13, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 15.5, 8, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#1d3557';
-    ctx.fillRect(-2, -12, 5, 24);
-
-    // Arm
-    ctx.strokeStyle = '#ffc21a';
-    ctx.lineWidth = 6;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(4, -4);
-    ctx.lineTo(4 + Math.cos(arm) * 15, -4 + Math.sin(arm) * 15);
+    ctx.strokeStyle = '#414d52';
+    ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Helm mit Sichtscheibe
-    ctx.fillStyle = '#ffc21a';
+    // Dezente Nähte und Brust-/Gurt-Details
+    ctx.strokeStyle = 'rgba(136, 166, 171, 0.62)';
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.arc(13, -12, 12, 0, Math.PI * 2);
+    ctx.moveTo(-7, -7);
+    ctx.lineTo(-5, 7);
+    ctx.moveTo(3, -8);
+    ctx.lineTo(2, 8);
+    ctx.stroke();
+    ctx.fillStyle = '#5ab8c0';
+    ctx.fillRect(-2, -1, 4, 2);
+    ctx.fillStyle = 'rgba(220,245,245,0.18)';
+    ctx.beginPath();
+    ctx.ellipse(1, -5, 7, 2, -0.08, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#0b3d5c';
+
+    // Schmaler Arm mit schwarzem Handschuh
+    ctx.strokeStyle = '#151c20';
+    ctx.lineWidth = 4.5;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.arc(17, -12, 7.5, 0, Math.PI * 2);
+    ctx.moveTo(4, -3);
+    ctx.lineTo(4 + Math.cos(arm) * 14, -3 + Math.sin(arm) * 14);
+    ctx.stroke();
+    ctx.fillStyle = '#090d10';
+    ctx.beginPath();
+    ctx.arc(4 + Math.cos(arm) * 14, -3 + Math.sin(arm) * 14, 2.7, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = 'rgba(180,240,255,0.8)';
+
+    // Schwarze Tauchermaske mit blau schimmernder Scheibe
+    ctx.fillStyle = '#10171b';
     ctx.beginPath();
-    ctx.arc(15, -15, 2.2, 0, Math.PI * 2);
+    ctx.arc(13, -10, 9.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#65777d';
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+    ctx.fillStyle = '#07384b';
+    ctx.beginPath();
+    ctx.ellipse(17, -10, 5.7, 5.2, -0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(164,238,255,0.9)';
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(205,250,255,0.85)';
+    ctx.beginPath();
+    ctx.ellipse(15, -14, 2.1, 1.2, -0.4, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
@@ -967,6 +1095,8 @@
     // Zeichnen
     ctx.clearRect(0, 0, W, H);
     drawBackground();
+    drawSurface();
+    drawFish();
     drawWeeds(true);
     drawObstacles();
     drawSeabed();
