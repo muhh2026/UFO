@@ -8,7 +8,7 @@
 // - CACHE-Version wird bei jedem Release hochgezählt; beim Activate werden
 //   alle älteren Caches gelöscht, skipWaiting + clients.claim sorgen dafür,
 //   dass das Update sofort aktiv wird.
-var CACHE = "ufo-jagd-v3";
+var CACHE = "ufo-jagd-v4";
 var ASSETS = [
   "./",
   "./index.html",
@@ -19,6 +19,9 @@ var ASSETS = [
   "./js/firebase-highscore.js",
   "./favicon.svg",
   "./manifest.webmanifest",
+  "./deep/",
+  "./deep/index.html",
+  "./deep/game.js",
 ];
 
 // Muss "frisch" vom Netz geladen werden (nie aus dem alten Cache servieren)?
