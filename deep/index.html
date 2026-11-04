@@ -42,6 +42,7 @@
       display: flex;
       gap: 18px;
       flex-wrap: wrap;
+      align-items: center;
       font-size: clamp(12px, 2.2vw, 16px);
       text-shadow: 0 1px 3px #000;
       pointer-events: none;
@@ -53,6 +54,52 @@
       text-decoration: none;
       pointer-events: auto;
     }
+    /* Sauerstoff-Leiste */
+    #o2box {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 150px;
+    }
+    #o2bar {
+      display: inline-block;
+      position: relative;
+      width: 110px;
+      height: 10px;
+      border-radius: 6px;
+      background: rgba(2, 20, 34, 0.75);
+      border: 1px solid rgba(140, 220, 255, 0.45);
+      overflow: hidden;
+    }
+    #o2fill {
+      position: absolute;
+      inset: 0;
+      width: 60%;
+      background: #4fe3a1;
+      border-radius: 6px;
+      transition: width 0.15s linear, background 0.3s linear;
+    }
+    #o2label { font-variant-numeric: tabular-nums; }
+    /* Aktive Power-Ups */
+    #effects {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-left: 4px;
+    }
+    #effects .fx {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.82em;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: rgba(2, 20, 34, 0.7);
+      border: 1px solid currentColor;
+      font-variant-numeric: tabular-nums;
+    }
+    .fx-shield { color: #ffd465; }
+    .fx-turbo { color: #ff8a3d; }
+    .fx-magnet { color: #c79bff; }
     #overlay {
       position: absolute;
       inset: 0;
@@ -95,7 +142,15 @@
     <div id="hud">
       <span>DISTANZ <b id="dist">0</b> m</span>
       <span>UMSCHWOMMEN <b id="passed">0</b></span>
+      <span>PERLEN <b id="coins">0</b></span>
+      <span>PUNKTE <b id="score">0</b></span>
       <span>BEST <b id="best">0</b> m</span>
+      <span id="o2box">
+        O₂
+        <span id="o2bar"><span id="o2fill"></span></span>
+        <b id="o2label">60</b>
+      </span>
+      <span id="effects"></span>
       <a class="back" href="../">← UFO-Jagd</a>
     </div>
     <div id="overlay">

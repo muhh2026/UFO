@@ -13,6 +13,13 @@
   const FLOOR = 556;       // Meeresboden
   const MAX_SPEED = 300;   // Schwimmgeschwindigkeit des Tauchers (px/s)
   const BEST_KEY = 'deepBest';
+  const O2_MAX = 100;      // Sauerstoff-Vorrat (Sekunden)
+  const O2_START = 65;     // so viel hat man beim Start
+  const O2_DRAIN = 1.8;    // Verbrauch pro Sekunde
+  const ITEM_R = 13;       // Radius der Perlen (Einsammel-Toleranz)
+  const SHIELD_TIME = 7;   // Sekunden Unverwundbarkeit
+  const TURBO_TIME = 4;    // Sekunden Schub
+  const MAGNET_TIME = 8;   // Sekunden Perlen-Magnet
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -28,6 +35,11 @@
     overlay: document.getElementById('overlay'),
     title: document.getElementById('ovTitle'),
     msg: document.getElementById('ovMsg'),
+    o2fill: document.getElementById('o2fill'),
+    o2label: document.getElementById('o2label'),
+    coins: document.getElementById('coins'),
+    score: document.getElementById('score'),
+    effects: document.getElementById('effects'),
   };
 
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -50,6 +62,23 @@
   let lastBubbleAt = 0;
   let lastDistShown = -1;
   let lastPassedShown = -1;
+  let lastCoinsShown = -1;
+  let lastScoreShown = -1;
+  let lastO2Shown = -1;
+
+  // Power-Up-Zustand
+  let items = [];         // Perlen + Power-Ups im Wasser
+  let floaters = [];      // aufsteigende Punktzahlen / Texte
+  let o2 = O2_START;
+  let coins = 0;          // eingesammelte Perlen
+  let score = 0;          // Gesamtpunkte (Perlen + Strecke + Umschwommen)
+  let nextItemAt = 0;     // Strecke, ab der die nächste Perle kommt
+  let shieldT = 0;        // Restzeit Schild (s)
+  let turboT = 0;         // Restzeit Turbo (s)
+  let magnetT = 0;        // Restzeit Magnet (s)
+  let hurtT = 0;          // Rot-Flash nach Rettung
+  let invulnT = 0;        // kurze Unverwundbarkeit nach Rettung
+  let effectsHtml = '';   // aktuelle Anzeige der aktiven Power-Ups
 
   const diver = { x: 180, y: 300, vx: 0, vy: 0, r: 20, anim: 0 };
 
@@ -80,10 +109,26 @@
     nextSpawn = 700;
     obstacles = [];
     bubbles = [];
+    items = [];
+    floaters = [];
     lastBubbleAt = 0;
     Object.assign(diver, { x: 180, y: 300, vx: 0, vy: 0, anim: 0 });
     lastDistShown = -1;
     lastPassedShown = -1;
+    lastCoinsShown = -1;
+    lastScoreShown = -1;
+    lastO2Shown = -1;
+    o2 = O2_START;
+    coins = 0;
+    score = 0;
+    nextItemAt = 620;
+    shieldT = 0;
+    turboT = 0;
+    magnetT = 0;
+    hurtT = 0;
+    invulnT = 0;
+    effectsHtml = '';
+    if (el.effects) el.effects.innerHTML = '';
   }
 
   // ---------- Hindernisse ----------
@@ -196,6 +241,7 @@
       if (!ob.counted && trailingEdge(ob) < diver.x - diver.r) {
         ob.counted = true;
         passed++;
+        addScore(15);
       }
     }
   }
@@ -204,6 +250,8 @@
   function updateDiver(dt) {
     let dvx = 0;
     let dvy = 0;
+    // Turbo lässt den Taucher schneller schwimmen
+    const maxSpeed = MAX_SPEED * (turboT > 0 ? 1.75 : 1);
     const left = keys.ArrowLeft || keys.KeyA;
     const right = keys.ArrowRight || keys.KeyD;
     const up = keys.ArrowUp || keys.KeyW;
@@ -213,14 +261,14 @@
 
     if (kx || ky) {
       const len = Math.hypot(kx, ky);
-      dvx = (kx / len) * MAX_SPEED;
-      dvy = (ky / len) * MAX_SPEED;
+      dvx = (kx / len) * maxSpeed;
+      dvy = (ky / len) * maxSpeed;
     } else if (pointerActive && pointer) {
       const ex = pointer.x - diver.x;
       const ey = pointer.y - diver.y;
       const dist = Math.hypot(ex, ey);
       if (dist > 4) {
-        const sp = Math.min(MAX_SPEED, dist * 3.5);
+        const sp = Math.min(maxSpeed, dist * 3.5);
         dvx = (ex / dist) * sp;
         dvy = (ey / dist) * sp;
       }
@@ -251,6 +299,189 @@
     }
   }
 
+  // ---------- Power-Ups / Perlen ----------
+  // Perlen (coin) = Punkte sammeln, o2 = Luft auffüllen,
+  // shield = 7 s unverwundbar, turbo = 4 s schneller, magnet = 8 s Perlen anziehen
+  function spawnItem() {
+    const roll = Math.random();
+    let kind = 'coin';
+    if (roll < 0.36) kind = 'coin';
+    else if (roll < 0.53) kind = 'o2';
+    else if (roll < 0.69) kind = 'shield';
+    else if (roll < 0.84) kind = 'turbo';
+    else kind = 'magnet';
+
+    // Perlen kommen auch als kleine Kette (3 Stück im Bogen)
+    if (kind === 'coin' && Math.random() < 0.55) {
+      const y0 = rand(TOP + 80, FLOOR - 80);
+      const up = Math.random() < 0.5 ? -1 : 1;
+      for (let i = 0; i < 3; i++) {
+        items.push({
+          kind: 'coin', x: W + 80 + i * 46, y: y0 + up * i * 26,
+          ph: rand(0, Math.PI * 2), r: ITEM_R, life: 0,
+        });
+      }
+      return;
+    }
+    items.push({
+      kind, x: W + 80, y: rand(TOP + 70, FLOOR - 70),
+      ph: rand(0, Math.PI * 2), r: kind === 'coin' ? ITEM_R : 16, life: 0,
+    });
+  }
+
+  function itemLabel(kind) {
+    if (kind === 'o2') return 'O₂ +30';
+    if (kind === 'shield') return 'SCHILD 7s';
+    if (kind === 'turbo') return 'TURBO 4s';
+    if (kind === 'magnet') return 'MAGNET 8s';
+    return '+5';
+  }
+
+  function itemColor(kind) {
+    if (kind === 'o2') return '#7fe7ff';
+    if (kind === 'shield') return '#ffd465';
+    if (kind === 'turbo') return '#ff8a3d';
+    if (kind === 'magnet') return '#c79bff';
+    return '#eafcff';
+  }
+
+  function addFloater(text, x, y, color) {
+    floaters.push({ text, x, y, color, life: 0 });
+  }
+
+  function collectItem(it) {
+    if (it.kind === 'coin') {
+      coins++;
+      addScore(5);
+      addFloater('+5', it.x, it.y, '#eafcff');
+    } else if (it.kind === 'o2') {
+      o2 = Math.min(O2_MAX, o2 + 30);
+      addFloater('O₂ +30', it.x, it.y, itemColor('o2'));
+    } else if (it.kind === 'shield') {
+      shieldT = Math.max(shieldT, SHIELD_TIME);
+      addFloater(itemLabel('shield'), it.x, it.y, itemColor('shield'));
+    } else if (it.kind === 'turbo') {
+      turboT = Math.max(turboT, TURBO_TIME);
+      addFloater(itemLabel('turbo'), it.x, it.y, itemColor('turbo'));
+    } else if (it.kind === 'magnet') {
+      magnetT = Math.max(magnetT, MAGNET_TIME);
+      addFloater(itemLabel('magnet'), it.x, it.y, itemColor('magnet'));
+    }
+    // Kleine Sammel-Explosion aus Bläschen
+    for (let i = 0; i < 7; i++) {
+      bubbles.push({
+        x: it.x, y: it.y, r: rand(1.5, 4), life: 0, vy: rand(-110, -40),
+      });
+    }
+  }
+
+  function addScore(n) {
+    score += n;
+  }
+
+  // Anzeige-Punkte: Ereignis-Punkte + 2 pro geschwommenem Meter
+  function totalScore() {
+    return score + Math.floor(traveled / 100) * 2;
+  }
+
+  function updateItems(dt, scroll) {
+    const magnet = magnetT > 0;
+    items = items.filter((it) => {
+      it.x -= scroll * dt;
+      it.life += dt;
+      it.y += Math.sin(t * 2 + it.ph) * 14 * dt;
+
+      // Magnet zieht Perlen zum Taucher
+      if (magnet && it.kind === 'coin') {
+        const dx = diver.x - it.x, dy = diver.y - it.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 260 && d > 1) {
+          const pull = 520 * dt;
+          it.x += (dx / d) * pull;
+          it.y += (dy / d) * pull;
+        }
+      }
+
+      // Einsammeln
+      const dx = diver.x - it.x, dy = diver.y - it.y;
+      const reach = diver.r + it.r + 4;
+      if (dx * dx + dy * dy < reach * reach) {
+        collectItem(it);
+        return false;
+      }
+      return it.x > -120;
+    });
+
+    // Timer der Power-Ups herunterzählen
+    shieldT = Math.max(0, shieldT - dt);
+    turboT = Math.max(0, turboT - dt);
+    magnetT = Math.max(0, magnetT - dt);
+    hurtT = Math.max(0, hurtT - dt);
+    invulnT = Math.max(0, invulnT - dt);
+
+    // Texte aufsteigen lassen
+    floaters = floaters.filter((f) => {
+      f.life += dt;
+      f.y -= 34 * dt;
+      return f.life < 1.2;
+    });
+  }
+
+  function updateOxygen(dt) {
+    // Taucher verbraucht Luft; je schneller er schwimmt, desto mehr
+    const speed = Math.hypot(diver.vx, diver.vy);
+    const extra = speed > 260 ? 0.5 : 0;
+    o2 -= (O2_DRAIN + extra) * dt;
+    if (o2 <= 0) {
+      o2 = 0;
+      gameOver('out');
+    }
+  }
+
+  function updateEffectsHud() {
+    const parts = [];
+    if (shieldT > 0) parts.push(`<span class="fx fx-shield">🛡 ${shieldT.toFixed(1)}s</span>`);
+    if (turboT > 0) parts.push(`<span class="fx fx-turbo">🚀 ${turboT.toFixed(1)}s</span>`);
+    if (magnetT > 0) parts.push(`<span class="fx fx-magnet">🧲 ${magnetT.toFixed(1)}s</span>`);
+    const html = parts.join('');
+    if (html !== effectsHtml) {
+      effectsHtml = html;
+      if (el.effects) el.effects.innerHTML = html;
+    }
+  }
+
+  function updateHud() {
+    const meters = Math.floor(traveled / 100);
+    if (meters !== lastDistShown) {
+      el.dist.textContent = meters;
+      lastDistShown = meters;
+    }
+    if (passed !== lastPassedShown) {
+      el.passed.textContent = passed;
+      lastPassedShown = passed;
+    }
+    if (coins !== lastCoinsShown) {
+      if (el.coins) el.coins.textContent = coins;
+      lastCoinsShown = coins;
+    }
+    const shownScore = totalScore();
+    if (shownScore !== lastScoreShown) {
+      if (el.score) el.score.textContent = shownScore;
+      lastScoreShown = shownScore;
+    }
+    const o2Rounded = Math.ceil(o2);
+    if (o2Rounded !== lastO2Shown) {
+      lastO2Shown = o2Rounded;
+      if (el.o2fill) {
+        const pct = clamp(o2 / O2_MAX, 0, 1) * 100;
+        el.o2fill.style.width = pct + '%';
+        el.o2fill.style.background = o2 < 25 ? '#ff5252' : o2 < 50 ? '#ffc21a' : '#4fe3a1';
+      }
+      if (el.o2label) el.o2label.textContent = o2Rounded;
+    }
+    updateEffectsHud();
+  }
+
   // ---------- Ablauf ----------
   function start() {
     resetGame();
@@ -258,21 +489,27 @@
     el.overlay.hidden = true;
   }
 
-  function gameOver() {
+  function gameOver(reason) {
     state = 'over';
     const meters = Math.floor(traveled / 100);
-    if (meters > best) {
+    const newBest = meters > best;
+    if (newBest) {
       best = meters;
       localStorage.setItem(BEST_KEY, String(best));
       el.best.textContent = best;
     }
+    const reasonText = reason === 'out'
+      ? 'Die Luft ist ausgegangen – auftauchen!'
+      : 'Du bist gegen ein Hindernis geschwommen.';
     showOverlay(
       'GEKRACHT',
-      `Du bist gegen ein Hindernis geschwommen.<br>
-       Distanz: <b>${meters} m</b> · Umschwommen: <b>${passed}</b><br><br>
+      `${reasonText}<br>
+       Distanz: <b>${meters} m</b> · Umschwommen: <b>${passed}</b><br>
+       Perlen: <b>${coins}</b> · Punkte: <b>${totalScore()}</b>${newBest ? ' · <b>NEUER REKORD!</b>' : ''}<br><br>
        <kbd>Leertaste</kbd> oder Klick = nochmal`
     );
   }
+
 
   function showOverlay(title, html) {
     el.title.textContent = title;
@@ -483,6 +720,112 @@
     }
   }
 
+  // ---------- Zeichnen: Perlen & Power-Ups ----------
+  function drawItem(it) {
+    const pulse = 0.5 + 0.5 * Math.sin(t * 4 + it.ph);
+    const col = itemColor(it.kind);
+
+    ctx.save();
+    ctx.translate(it.x, it.y);
+
+    // Glow
+    const g = ctx.createRadialGradient(0, 0, 2, 0, 0, it.r * 2.6);
+    g.addColorStop(0, col);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.35 + 0.25 * pulse;
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, 0, it.r * 2.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    if (it.kind === 'coin') {
+      // Perlmut-Perle mit Glanzpunkt
+      const pg = ctx.createRadialGradient(-3, -4, 1, 0, 0, it.r);
+      pg.addColorStop(0, '#ffffff');
+      pg.addColorStop(0.55, '#dff4ff');
+      pg.addColorStop(1, '#8fc4da');
+      ctx.fillStyle = pg;
+      ctx.beginPath();
+      ctx.arc(0, 0, it.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    } else {
+      // Power-Up: runde Kapsel mit Symbol
+      ctx.fillStyle = 'rgba(4, 26, 42, 0.85)';
+      ctx.beginPath();
+      ctx.arc(0, 0, it.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2.5;
+      ctx.globalAlpha = 0.7 + 0.3 * pulse;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = col;
+      ctx.font = 'bold 16px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const sym = it.kind === 'o2' ? 'O₂'
+        : it.kind === 'shield' ? '🛡'
+        : it.kind === 'turbo' ? '⚡'
+        : '🧲';
+      ctx.fillText(sym, 0, 1);
+    }
+    ctx.restore();
+  }
+
+  function drawItems() {
+    for (const it of items) drawItem(it);
+  }
+
+  function drawFloaters() {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    for (const f of floaters) {
+      ctx.globalAlpha = clamp(1.2 - f.life, 0, 1);
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawShield() {
+    if (shieldT <= 0) return;
+    const pulse = 0.5 + 0.5 * Math.sin(t * 6);
+    // Blinken kurz vor Ablauf
+    if (shieldT < 2 && Math.floor(shieldT * 8) % 2 === 0) return;
+    ctx.save();
+    ctx.translate(diver.x, diver.y);
+    const r = 34 + pulse * 3;
+    const g = ctx.createRadialGradient(0, 0, r * 0.55, 0, 0, r);
+    g.addColorStop(0, 'rgba(255,212,101,0)');
+    g.addColorStop(0.7, `rgba(255,212,101,${0.12 + pulse * 0.08})`);
+    g.addColorStop(1, `rgba(255,235,170,${0.45 + pulse * 0.25})`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(255,236,180,${0.5 + pulse * 0.4})`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawVignette() {
+    if (hurtT > 0) {
+      ctx.fillStyle = `rgba(255,60,60,${hurtT * 0.5})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+    if (o2 < 25) {
+      const a = 0.18 + 0.12 * Math.sin(t * 8);
+      ctx.fillStyle = `rgba(10,40,70,${a})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
   // ---------- Zeichnen: Taucher ----------
   function drawDiver() {
     const tilt = clamp(diver.vy / 600, -0.45, 0.45);
@@ -574,31 +917,51 @@
         nextSpawn = traveled + nextSpacing();
       }
 
+      // Perlen/Power-Ups spawnen
+      while (traveled >= nextItemAt) {
+        spawnItem();
+        nextItemAt = traveled + rand(300, 620);
+      }
+
       updateDiver(dt);
       updateObstacles(dt, scroll);
+      updateItems(dt, scroll);
       checkPassed();
+      updateOxygen(dt);
 
-      for (const ob of obstacles) {
-        if (obstacleHit(ob)) {
-          gameOver();
-          break;
+      // Kollision: mit Schild wird man gerettet statt zu sterben
+      if (state === 'play' && invulnT <= 0) {
+        for (const ob of obstacles) {
+          if (obstacleHit(ob)) {
+            if (shieldT > 0) {
+              // Schild rettet: Hindernis zerspringt, kurze Unverwundbarkeit
+              shieldT = 0;
+              hurtT = 0.6;
+              invulnT = 0.9;
+              ob.dead = true;
+              score += 25;
+              addFloater('GERETTET! +25', diver.x, diver.y - 30, '#ffd465');
+              for (let i = 0; i < 10; i++) {
+                bubbles.push({
+                  x: ob.x, y: ob.y, r: rand(2, 5), life: 0, vy: rand(-130, -50),
+                });
+              }
+              obstacles = obstacles.filter((o) => !o.dead);
+            } else {
+              gameOver('hit');
+            }
+            break;
+          }
         }
       }
 
-      const meters = Math.floor(traveled / 100);
-      if (meters !== lastDistShown) {
-        el.dist.textContent = meters;
-        lastDistShown = meters;
-      }
-      if (passed !== lastPassedShown) {
-        el.passed.textContent = passed;
-        lastPassedShown = passed;
-      }
+      if (state === 'play') updateHud();
     } else if (state === 'ready' || state === 'over') {
       // Hintergrund läuft weiter, damit die Szene lebt
       t += dt;
       traveled += 120 * dt;
       updateDiver(dt);
+      floaters = floaters.filter((f) => (f.life += dt) < 1.2);
     }
 
     // Zeichnen
@@ -608,8 +971,12 @@
     drawObstacles();
     drawSeabed();
     drawWeeds(false);
+    drawItems();
     drawBubbles(state === 'paused' ? 0 : dt);
     drawDiver();
+    drawShield();
+    drawFloaters();
+    drawVignette();
 
     requestAnimationFrame(frame);
   }
@@ -680,6 +1047,10 @@
     'DEEP',
     `Der Taucher ist immer im Wasser und schwimmt von selbst weiter.<br>
      Weiche <b>Korallen</b>, <b>Felsen</b>, <b>Quallen</b> und <b>Haien</b> aus und schwimm um sie herum.<br><br>
+     Achte auf deine <b>Luft (O₂)</b> – sie läuft ständig ab, <b>Luftflaschen</b> füllen sie wieder auf.
+     Sammle <b>Perlen</b> für Punkte, und sichere dir
+     <b style="color:#ffd465">Schild</b> 🛡, <b style="color:#ff8a3d">Turbo</b> ⚡ und
+     <b style="color:#c79bff">Magnet</b> 🧲 für den Vorteil.<br><br>
      <kbd>Pfeiltasten</kbd>/<kbd>WASD</kbd> oder Maus/Finger = steuern · <kbd>P</kbd> = Pause<br><br>
      <kbd>Leertaste</kbd> oder Klick = Start`
   );
