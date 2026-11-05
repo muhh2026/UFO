@@ -1085,12 +1085,10 @@
       floaters = floaters.filter((f) => (f.life += dt) < 1.2);
     }
 
-    // Wasser/Hintergrund bewegt sich nur, solange die Maus bewegt wird
-    if (now / 1000 - lastMouseAt < 0.15) {
-      animT += dt;
-      const bgSpeed = state === 'play' ? Math.min(500, 230 + traveled / 60) : 120;
-      bgScroll += bgSpeed * dt;
-    }
+    // Wasser/Hintergrund animiert dauerhaft
+    animT += dt;
+    const bgSpeed = state === 'play' ? Math.min(500, 230 + traveled / 60) : 120;
+    bgScroll += bgSpeed * dt;
 
     // Zeichnen
     ctx.clearRect(0, 0, W, H);
