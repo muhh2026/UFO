@@ -50,7 +50,8 @@
   // 'ready' = Startbildschirm, 'play', 'paused', 'over'
   let state = 'ready';
   let t = 0;              // Spielzeit (s)
-  let animT = 0;          // Wasser-Animationszeit: läuft nur, solange der Taucher gesteuert wird
+  let animT = 0;          // Wasser-Animationszeit: läuft nur, solange die Maus bewegt wird
+  let lastMouseAt = -10;  // Zeitpunkt (s) der letzten Mausbewegung
   let traveled = 0;       // zurückgelegte Strecke (px)
   let passed = 0;         // umschwommene Hindernisse
   let nextSpawn = 0;      // Strecke, ab der das nächste Hindernis kommt
@@ -1082,6 +1083,9 @@
       updateDiver(dt);
       floaters = floaters.filter((f) => (f.life += dt) < 1.2);
     }
+
+    // Wasser/Hintergrund bewegt sich nur, solange die Maus bewegt wird
+    if (now / 1000 - lastMouseAt < 0.15) animT += dt;
 
     // Zeichnen
     ctx.clearRect(0, 0, W, H);
