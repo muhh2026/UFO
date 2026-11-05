@@ -51,6 +51,7 @@
   let state = 'ready';
   let t = 0;              // Spielzeit (s)
   let animT = 0;          // Wasser-Animationszeit: läuft nur, solange die Maus bewegt wird
+  let bgScroll = 0;       // Hintergrund-Scroll: läuft nur, solange die Maus bewegt wird
   let lastMouseAt = -10;  // Zeitpunkt (s) der letzten Mausbewegung
   let traveled = 0;       // zurückgelegte Strecke (px)
   let passed = 0;         // umschwommene Hindernisse
@@ -119,6 +120,8 @@
 
   function resetGame() {
     t = 0;
+    animT = 0;
+    bgScroll = 0;
     traveled = 0;
     passed = 0;
     nextSpawn = 700;
@@ -545,7 +548,7 @@
     // Lichtstrahlen von der Oberfläche
     ctx.save();
     for (let i = 0; i < 6; i++) {
-      const bx = ((i * 220 - traveled * 0.05 + animT * 8) % (W + 300) + W + 300) % (W + 300) - 150;
+      const bx = ((i * 220 - bgScroll * 0.05 + animT * 8) % (W + 300) + W + 300) % (W + 300) - 150;
       const grad = ctx.createLinearGradient(bx, 0, bx + 120, H * 0.8);
       grad.addColorStop(0, 'rgba(180,245,255,0.16)');
       grad.addColorStop(1, 'rgba(180,245,255,0)');
@@ -563,7 +566,7 @@
     // Plankton
     ctx.fillStyle = 'rgba(200,240,255,0.5)';
     for (const p of specks) {
-      const px = ((p.x - traveled * 0.5 * p.f) % W + W) % W;
+      const px = ((p.x - bgScroll * 0.5 * p.f) % W + W) % W;
       ctx.globalAlpha = 0.3 + 0.4 * p.f;
       ctx.beginPath();
       ctx.arc(px, p.y + Math.sin(t + p.s * 3) * 4, p.s, 0, Math.PI * 2);
@@ -574,20 +577,20 @@
 
   function drawSurface() {
     // Bewegte, feine Wellenkante und Lichtreflexe direkt unter der Oberfläche.
-    const shimmer = 0.45 + Math.sin(t * 1.7) * 0.08;
+    const shimmer = 0.45 + Math.sin(animT * 1.7) * 0.08;
     ctx.save();
     ctx.strokeStyle = `rgba(190, 250, 255, ${shimmer})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, TOP + 8);
     for (let x = 0; x <= W; x += 24) {
-      ctx.lineTo(x, TOP + 8 + Math.sin(x * 0.025 + t * 2.2) * 3);
+      ctx.lineTo(x, TOP + 8 + Math.sin(x * 0.025 + animT * 2.2) * 3);
     }
     ctx.stroke();
     for (let i = 0; i < 9; i++) {
-      const x = ((i * 137 - traveled * 0.24 + t * 18) % (W + 100) + W + 100) % (W + 100) - 50;
+      const x = ((i * 137 - bgScroll * 0.24 + animT * 18) % (W + 100) + W + 100) % (W + 100) - 50;
       const y = TOP + 18 + (i % 3) * 11;
-      ctx.globalAlpha = 0.18 + 0.12 * Math.sin(t * 2 + i);
+      ctx.globalAlpha = 0.18 + 0.12 * Math.sin(animT * 2 + i);
       ctx.strokeStyle = '#d3fbff';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -602,8 +605,8 @@
     ctx.save();
     for (const f of fish) {
       const period = W + 180;
-      const sx = ((f.x - traveled * f.speed + t * 12) % period + period) % period - 70;
-      const sy = f.y + Math.sin(t * 1.5 + f.phase) * 5;
+      const sx = ((f.x - bgScroll * f.speed + animT * 12) % period + period) % period - 70;
+      const sy = f.y + Math.sin(animT * 1.5 + f.phase) * 5;
       const s = f.scale;
       ctx.save();
       ctx.translate(sx, sy);
@@ -613,7 +616,7 @@
       ctx.beginPath();
       ctx.ellipse(0, 0, 13, 6, 0, 0, Math.PI * 2);
       ctx.fill();
-      const tail = Math.sin(t * 8 + f.phase) * 2;
+      const tail = Math.sin(animT * 8 + f.phase) * 2;
       ctx.beginPath();
       ctx.moveTo(-11, 0);
       ctx.lineTo(-19, -6 + tail);
@@ -640,14 +643,14 @@
     const speed = far ? 0.35 : 0.8;
     for (const w of weeds) {
       if (w.far !== far) continue;
-      const sx = (((w.x - traveled * speed) % period) + period) % period - 40;
+      const sx = (((w.x - bgScroll * speed) % period) + period) % period - 40;
       ctx.strokeStyle = far ? '#0f5f4d' : '#15876a';
       ctx.lineWidth = far ? 6 : 9;
       ctx.lineCap = 'round';
       ctx.globalAlpha = far ? 0.55 : 0.95;
       ctx.beginPath();
       ctx.moveTo(sx, FLOOR + 10);
-      const sway = Math.sin(t * 1.4 + w.ph) * 18;
+      const sway = Math.sin(animT * 1.4 + w.ph) * 18;
       ctx.quadraticCurveTo(sx + sway * 0.4, FLOOR - w.h * 0.5, sx + sway, FLOOR - w.h);
       ctx.stroke();
     }
@@ -659,7 +662,7 @@
     ctx.beginPath();
     ctx.moveTo(0, H);
     for (let x = 0; x <= W; x += 20) {
-      const y = FLOOR + 14 + Math.sin((x + traveled * 0.8) * 0.02) * 6 + Math.sin(x * 0.07) * 3;
+      const y = FLOOR + 14 + Math.sin((x + bgScroll * 0.8) * 0.02) * 6 + Math.sin(x * 0.07) * 3;
       ctx.lineTo(x, y);
     }
     ctx.lineTo(W, H);
@@ -670,7 +673,7 @@
     // Kieselsteine
     ctx.fillStyle = '#6e5a38';
     for (let i = 0; i < 18; i++) {
-      const sx = ((i * 97 - traveled * 0.8) % W + W) % W;
+      const sx = ((i * 97 - bgScroll * 0.8) % W + W) % W;
       ctx.beginPath();
       ctx.ellipse(sx, FLOOR + 48 + (i % 3) * 12, 6 + (i % 4), 3, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -1042,8 +1045,6 @@
       }
 
       updateDiver(dt);
-      // Wasser/Hintergrund bewegt sich nur, solange der Taucher aktiv gesteuert wird
-      if (Math.hypot(diver.vx, diver.vy) > 8) animT += dt;
       updateObstacles(dt, scroll);
       updateItems(dt, scroll);
       checkPassed();
@@ -1085,7 +1086,11 @@
     }
 
     // Wasser/Hintergrund bewegt sich nur, solange die Maus bewegt wird
-    if (now / 1000 - lastMouseAt < 0.15) animT += dt;
+    if (now / 1000 - lastMouseAt < 0.15) {
+      animT += dt;
+      const bgSpeed = state === 'play' ? Math.min(500, 230 + traveled / 60) : 120;
+      bgScroll += bgSpeed * dt;
+    }
 
     // Zeichnen
     ctx.clearRect(0, 0, W, H);
