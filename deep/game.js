@@ -538,10 +538,10 @@
   // ---------- Zeichnen: Hintergrund ----------
   function drawBackground() {
     const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#1b8fb8');
-    g.addColorStop(0.35, '#0b5a80');
-    g.addColorStop(0.7, '#063656');
-    g.addColorStop(1, '#021a2c');
+    g.addColorStop(0, '#0a4a66');
+    g.addColorStop(0.35, '#063a56');
+    g.addColorStop(0.7, '#03253a');
+    g.addColorStop(1, '#010f1c');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
@@ -550,7 +550,7 @@
     for (let i = 0; i < 6; i++) {
       const bx = ((i * 220 - bgScroll * 0.05 + animT * 8) % (W + 300) + W + 300) % (W + 300) - 150;
       const grad = ctx.createLinearGradient(bx, 0, bx + 120, H * 0.8);
-      grad.addColorStop(0, 'rgba(180,245,255,0.16)');
+      grad.addColorStop(0, 'rgba(180,245,255,0.08)');
       grad.addColorStop(1, 'rgba(180,245,255,0)');
       ctx.fillStyle = grad;
       ctx.beginPath();
@@ -897,6 +897,36 @@
     }
   }
 
+  // ---------- Taschenlampe: Taucher schwimmt im Dunkeln ----------
+  function drawFlashlight() {
+    // Dunkle Decke über allem, mit hellem Hof um den Taucher
+    const g = ctx.createRadialGradient(diver.x, diver.y, 30, diver.x, diver.y, 330);
+    g.addColorStop(0, 'rgba(255,244,200,0.30)');
+    g.addColorStop(0.35, 'rgba(255,236,170,0.12)');
+    g.addColorStop(0.7, 'rgba(2,8,16,0.55)');
+    g.addColorStop(1, 'rgba(1,4,10,0.93)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // Lichtkegel in Schwimmrichtung
+    const dir = diver.vx < -8 ? -1 : 1;
+    ctx.save();
+    ctx.translate(diver.x + dir * 14, diver.y);
+    ctx.rotate(clamp(diver.vy / 500, -0.4, 0.4));
+    const cone = ctx.createLinearGradient(0, 0, dir * 340, 0);
+    cone.addColorStop(0, 'rgba(255,240,190,0.30)');
+    cone.addColorStop(1, 'rgba(255,240,190,0)');
+    ctx.fillStyle = cone;
+    ctx.beginPath();
+    ctx.moveTo(0, -6);
+    ctx.lineTo(dir * 340, -95);
+    ctx.lineTo(dir * 340, 95);
+    ctx.lineTo(0, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
   // ---------- Zeichnen: Taucher ----------
   function drawDiver() {
     const tilt = clamp(diver.vy / 600, -0.45, 0.45);
@@ -1105,6 +1135,7 @@
     drawShield();
     drawFloaters();
     drawVignette();
+    drawFlashlight();
 
     requestAnimationFrame(frame);
   }
