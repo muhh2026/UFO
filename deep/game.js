@@ -1115,10 +1115,13 @@
       floaters = floaters.filter((f) => (f.life += dt) < 1.2);
     }
 
-    // Wasser/Hintergrund animiert dauerhaft
-    animT += dt;
-    const bgSpeed = state === 'play' ? Math.min(500, 230 + traveled / 60) : 120;
-    bgScroll += bgSpeed * dt;
+    // Hintergrund (Wasser) + Blasen bewegen sich nur bei Mausbewegung
+    const bgActive = now / 1000 - lastMouseAt < 0.15;
+    if (bgActive) {
+      animT += dt;
+      const bgSpeed = state === 'play' ? Math.min(500, 230 + traveled / 60) : 120;
+      bgScroll += bgSpeed * dt;
+    }
 
     // Zeichnen
     ctx.clearRect(0, 0, W, H);
@@ -1130,7 +1133,7 @@
     drawSeabed();
     drawWeeds(false);
     drawItems();
-    drawBubbles(state === 'paused' ? 0 : dt);
+    drawBubbles(state === 'paused' || !bgActive ? 0 : dt);
     drawDiver();
     drawShield();
     drawFloaters();
@@ -1164,6 +1167,10 @@
 
   window.addEventListener('blur', () => {
     for (const k of Object.keys(keys)) keys[k] = false;
+  });
+
+  window.addEventListener('mousemove', () => {
+    lastMouseAt = performance.now() / 1000;
   });
 
   // Ein Klick startet das Spiel, steuert aber nicht den Taucher.
