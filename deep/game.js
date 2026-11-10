@@ -50,9 +50,10 @@
   // 'ready' = Startbildschirm, 'play', 'paused', 'over'
   let state = 'ready';
   let t = 0;              // Spielzeit (s)
-  let animT = 0;          // Wasser-Animationszeit: läuft nur, solange die Maus bewegt wird
-  let bgScroll = 0;       // Hintergrund-Scroll: läuft nur, solange die Maus bewegt wird
-  let lastMouseAt = -10;  // Zeitpunkt (s) der letzten Mausbewegung
+  let animT = 0;          // Wasser-Animationszeit
+  let bgScroll = 0;       // Hintergrund-Scroll
+  let lastMouseAt = performance.now() / 1000;  // letzte Eingabe (Maus/Tastatur)
+  let isAutoPaused = false;
   let traveled = 0;       // zurückgelegte Strecke (px)
   let passed = 0;         // umschwommene Hindernisse
   let nextSpawn = 0;      // Strecke, ab der das nächste Hindernis kommt
@@ -1058,9 +1059,11 @@
     const dt = Math.min(0.033, (now - (frame.last || now)) / 1000);
     frame.last = now;
 
-    // Alles bewegt sich nur bei Mausbewegung
-    const bgActive = now / 1000 - lastMouseAt < 0.15;
-    if (bgActive) {
+    // Hybrid: flüssig, aber Auto-Pause nach 2s ohne Eingabe
+    const idle = now / 1000 - lastMouseAt > 2;
+    isAutoPaused = idle && state === 'play';
+
+    if (!isAutoPaused) {
       if (state === 'play') {
         t += dt;
         const scroll = Math.min(500, 230 + traveled / 60);
@@ -1132,12 +1135,24 @@
     drawSeabed();
     drawWeeds(false);
     drawItems();
-    drawBubbles(state === 'paused' || !bgActive ? 0 : dt);
+    drawBubbles(state === 'paused' || isAutoPaused ? 0 : dt);
     drawDiver();
     drawShield();
     drawFloaters();
     drawVignette();
     drawFlashlight();
+
+    if (isAutoPaused) {
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 22px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('PAUSE — beweg die Maus oder drücke eine Taste', W / 2, H / 2);
+      ctx.font = '14px system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillText('Spiel läuft automatisch weiter', W / 2, H / 2 + 22);
+    }
 
     requestAnimationFrame(frame);
   }
@@ -1149,6 +1164,7 @@
   ]);
 
   window.addEventListener('keydown', (e) => {
+    lastMouseAt = performance.now() / 1000;
     if (GAME_KEYS.has(e.code)) e.preventDefault();
     if (e.repeat) return;
     if (e.code === 'Space' || e.code === 'Enter') {
@@ -1174,6 +1190,7 @@
 
   // Ein Klick startet das Spiel, steuert aber nicht den Taucher.
   window.addEventListener('pointerdown', () => {
+    lastMouseAt = performance.now() / 1000;
     action();
   });
 
