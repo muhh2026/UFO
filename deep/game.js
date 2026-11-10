@@ -1058,66 +1058,65 @@
     const dt = Math.min(0.033, (now - (frame.last || now)) / 1000);
     frame.last = now;
 
-    if (state === 'play') {
-      t += dt;
-      const scroll = Math.min(500, 230 + traveled / 60);
-      traveled += scroll * dt;
-
-      while (traveled >= nextSpawn) {
-        spawnPattern();
-        nextSpawn = traveled + nextSpacing();
-      }
-
-      // Perlen/Power-Ups spawnen
-      while (traveled >= nextItemAt) {
-        spawnItem();
-        nextItemAt = traveled + rand(300, 620);
-      }
-
-      updateDiver(dt);
-      updateObstacles(dt, scroll);
-      updateItems(dt, scroll);
-      checkPassed();
-      updateOxygen(dt);
-
-      // Kollision: mit Schild wird man gerettet statt zu sterben
-      if (state === 'play' && invulnT <= 0) {
-        for (const ob of obstacles) {
-          if (obstacleHit(ob)) {
-            if (shieldT > 0) {
-              // Schild rettet: Hindernis zerspringt, kurze Unverwundbarkeit
-              shieldT = 0;
-              hurtT = 0.6;
-              invulnT = 0.9;
-              ob.dead = true;
-              score += 25;
-              addFloater('GERETTET! +25', diver.x, diver.y - 30, '#ffd465');
-              for (let i = 0; i < 10; i++) {
-                bubbles.push({
-                  x: ob.x, y: ob.y, r: rand(2, 5), life: 0, vy: rand(-130, -50),
-                });
-              }
-              obstacles = obstacles.filter((o) => !o.dead);
-            } else {
-              gameOver('hit');
-            }
-            break;
-          }
-        }
-      }
-
-      if (state === 'play') updateHud();
-    } else if (state === 'ready' || state === 'over') {
-      // Hintergrund läuft weiter, damit die Szene lebt
-      t += dt;
-      traveled += 120 * dt;
-      updateDiver(dt);
-      floaters = floaters.filter((f) => (f.life += dt) < 1.2);
-    }
-
-    // Hintergrund (Wasser) + Blasen bewegen sich nur bei Mausbewegung
+    // Alles bewegt sich nur bei Mausbewegung
     const bgActive = now / 1000 - lastMouseAt < 0.15;
     if (bgActive) {
+      if (state === 'play') {
+        t += dt;
+        const scroll = Math.min(500, 230 + traveled / 60);
+        traveled += scroll * dt;
+
+        while (traveled >= nextSpawn) {
+          spawnPattern();
+          nextSpawn = traveled + nextSpacing();
+        }
+
+        // Perlen/Power-Ups spawnen
+        while (traveled >= nextItemAt) {
+          spawnItem();
+          nextItemAt = traveled + rand(300, 620);
+        }
+
+        updateDiver(dt);
+        updateObstacles(dt, scroll);
+        updateItems(dt, scroll);
+        checkPassed();
+        updateOxygen(dt);
+
+        // Kollision: mit Schild wird man gerettet statt zu sterben
+        if (state === 'play' && invulnT <= 0) {
+          for (const ob of obstacles) {
+            if (obstacleHit(ob)) {
+              if (shieldT > 0) {
+                // Schild rettet: Hindernis zerspringt, kurze Unverwundbarkeit
+                shieldT = 0;
+                hurtT = 0.6;
+                invulnT = 0.9;
+                ob.dead = true;
+                score += 25;
+                addFloater('GERETTET! +25', diver.x, diver.y - 30, '#ffd465');
+                for (let i = 0; i < 10; i++) {
+                  bubbles.push({
+                    x: ob.x, y: ob.y, r: rand(2, 5), life: 0, vy: rand(-130, -50),
+                  });
+                }
+                obstacles = obstacles.filter((o) => !o.dead);
+              } else {
+                gameOver('hit');
+              }
+              break;
+            }
+          }
+        }
+
+        if (state === 'play') updateHud();
+      } else if (state === 'ready' || state === 'over') {
+        t += dt;
+        traveled += 120 * dt;
+        updateDiver(dt);
+        floaters = floaters.filter((f) => (f.life += dt) < 1.2);
+      }
+
       animT += dt;
       const bgSpeed = state === 'play' ? Math.min(500, 230 + traveled / 60) : 120;
       bgScroll += bgSpeed * dt;
